@@ -7,13 +7,14 @@ use tokio::prelude::*;
 use url::Url;
 
 use crate::config::ServerSession;
+use crate::connector;
 
 pub async fn register(url: Url, username: String) -> Result<(), AnyError> {
     let pass = rpassword::prompt_password_stdout("Password: ").unwrap();
 
     debug!("Registering to {} with username {}", url, username);
 
-    super::connector::register(url, username, pass).await?;
+    connector::register(url, username, pass).await?;
 
     info!("Registered successfully!");
 
@@ -33,7 +34,7 @@ pub async fn login(
         url, username, device_id
     );
 
-    let session_id = super::connector::login(url.clone(), device_id, username, pass).await?;
+    let session_id = connector::login(url.clone(), device_id, username, pass).await?;
 
     debug!("Logged in, session ID: {}", session_id);
 
@@ -51,6 +52,14 @@ pub async fn login(
         .await?;
 
     info!("Logged in successfully, session ID: {}", session_id);
+
+    Ok(())
+}
+
+pub async fn list_devices(session: &ServerSession) -> Result<(), AnyError> {
+    let list = connector::list_devices(session).await?.0;
+
+    info!("Remote devices list: {:?}", list);
 
     Ok(())
 }

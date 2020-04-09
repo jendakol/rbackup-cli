@@ -1,11 +1,12 @@
 use std::path::PathBuf;
 
 use err_context::AnyError;
-use log::info;
+use log::{debug, info};
 use structopt::StructOpt;
 use url::Url;
 
-use crate::Command::{Login, Register};
+use crate::config::ServerSession;
+use crate::Command::{ListDevices, Login, Register};
 
 mod commands;
 mod config;
@@ -32,6 +33,7 @@ enum Command {
         device_id: String,
         username: String,
     },
+    ListDevices,
 }
 
 #[tokio::main]
@@ -54,5 +56,18 @@ async fn main() -> Result<(), AnyError> {
             device_id,
             username,
         } => commands::login(url, device_id, username, &config_file).await,
+        ListDevices => {
+            let session = load_session(&config_file).await?;
+            commands::list_devices(&session).await
+        }
     }
+}
+
+async fn load_session(path: &PathBuf) -> Result<ServerSession, AnyError> {
+    let content = tokio::fs::read_to_string(path).await?;
+    let session = toml::from_str(&content)?;
+
+    debug!("Loaded stored session: {:?}", session);
+
+    Ok(session)
 }

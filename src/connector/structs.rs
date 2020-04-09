@@ -5,3 +5,6 @@ use uuid::Uuid;
 pub struct LoginResponse {
     pub session_id: Uuid,
 }
+
+#[derive(Deserialize, Debug)]
+pub struct DevicesListResponse(pub Vec<String>);
