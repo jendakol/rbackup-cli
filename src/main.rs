@@ -6,7 +6,7 @@ use structopt::StructOpt;
 use url::Url;
 
 use crate::config::ServerSession;
-use crate::Command::{ListDevices, Login, Register};
+use crate::Command::*;
 
 mod commands;
 mod config;
@@ -34,6 +34,9 @@ enum Command {
         username: String,
     },
     ListDevices,
+    Upload {
+        filename: PathBuf,
+    },
 }
 
 #[tokio::main]
@@ -50,24 +53,29 @@ async fn main() -> Result<(), AnyError> {
     info!("Using config file: {:?}", config_file);
 
     match opts.cmd {
-        Register { url, username } => commands::register(url, username).await,
+        Register { url, username } => commands::register(&url, username).await,
         Login {
             url,
             device_id,
             username,
-        } => commands::login(url, device_id, username, &config_file).await,
+        } => commands::login(&url, device_id, username, &config_file).await,
         ListDevices => {
             let session = load_session(&config_file).await?;
             commands::list_devices(&session).await
+        }
+        Upload { filename } => {
+            let session = load_session(&config_file).await?;
+            commands::upload_file(&session, filename).await
         }
     }
 }
 
 async fn load_session(path: &PathBuf) -> Result<ServerSession, AnyError> {
     let content = tokio::fs::read_to_string(path).await?;
-    let session = toml::from_str(&content)?;
+    let session: ServerSession = toml::from_str(&content)?;
 
     debug!("Loaded stored session: {:?}", session);
+    info!("Configured server: {:?}", session.url);
 
     Ok(session)
 }
