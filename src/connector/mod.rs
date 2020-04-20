@@ -86,7 +86,7 @@ pub async fn login(
 }
 
 pub async fn upload_file(
-    session: &ServerSession,
+    session: ServerSession,
     file: PathBuf,
 ) -> Result<UploadFileResponse, AnyError> {
     let url = create_url(&session.url, paths::UPLOAD)?;
@@ -120,7 +120,7 @@ pub async fn upload_file(
 //     x.and_then(|v| v.to_str().ok().map(String::from))
 // }
 
-pub async fn list_devices(session: &ServerSession) -> Result<DevicesListResponse, AnyError> {
+pub async fn list_devices(session: ServerSession) -> Result<DevicesListResponse, AnyError> {
     let response = get_authenticated(session, paths::list::DEVICES, &Vec::<&str>::new()).await?;
 
     match response.status() {
@@ -136,7 +136,7 @@ pub async fn list_devices(session: &ServerSession) -> Result<DevicesListResponse
 }
 
 async fn get_authenticated<Q: Serialize + ?Sized>(
-    session: &ServerSession,
+    session: ServerSession,
     path: &str,
     query: &Q,
 ) -> Result<Response, AnyError> {
@@ -180,8 +180,8 @@ fn create_url(base_url: &url::Url, path: &str) -> Result<reqwest::Url, AnyError>
     url.join(path).map_err(AnyError::from)
 }
 
-impl From<&ServerSession> for HeaderMap {
-    fn from(session: &ServerSession) -> Self {
+impl From<ServerSession> for HeaderMap {
+    fn from(session: ServerSession) -> Self {
         let mut headers = HeaderMap::new();
         headers.insert(
             SESSION_HEADER,

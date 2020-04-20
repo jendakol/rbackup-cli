@@ -10,6 +10,7 @@ env_logger = "~0.7"
 err-context = "~0.1"
 err-derive = "~0.2"
 futures = "~0.3"
+futures-retry = "~0.5"
 hex = "~0.4"
 chrono = { version = "~0.4", features = ["serde", "rustc-serialize"] }
 log = "~0.4"
@@ -25,3 +26,4 @@ toml = "~0.5"
 uuid = { version = "~0.8", default-features = false, features = ["serde"] }
 url = "~1"
 url_serde = "~0.2"
+walkdir = "~2.3"

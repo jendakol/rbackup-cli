@@ -12,6 +12,7 @@ mod commands;
 mod config;
 mod connector;
 mod errors;
+mod utils;
 
 #[derive(Debug, StructOpt)]
 #[structopt(about = "the stupid content tracker")]
@@ -35,7 +36,11 @@ enum Command {
     },
     ListDevices,
     Upload {
-        filename: PathBuf,
+        #[structopt(short, long)]
+        recursive: bool,
+        #[structopt(short, long, default_value = "4")]
+        parallelism: usize,
+        filenames: Vec<PathBuf>,
     },
 }
 
@@ -61,11 +66,33 @@ async fn main() -> Result<(), AnyError> {
         } => commands::login(&url, device_id, username, &config_file).await,
         ListDevices => {
             let session = load_session(&config_file).await?;
-            commands::list_devices(&session).await
+            commands::list_devices(session).await
         }
-        Upload { filename } => {
+        Upload {
+            recursive,
+            parallelism,
+            filenames,
+        } => {
+            if filenames.is_empty() {
+                return Err(AnyError::from("You must provide at least one filename!"));
+            }
+
+            for path in filenames.iter() {
+                if path.is_dir() && !recursive {
+                    return Err(AnyError::from(format!(
+                        "{:?} is a dir but you didn't enable dirs recursion!",
+                        path
+                    )));
+                }
+            }
+
+            debug!(
+                "Upload: recursive: {}, parallelism: {}, filenames: {:?}",
+                recursive, parallelism, filenames
+            );
+
             let session = load_session(&config_file).await?;
-            commands::upload_file(&session, filename).await
+            commands::upload_files(session, parallelism, filenames).await
         }
     }
 }
